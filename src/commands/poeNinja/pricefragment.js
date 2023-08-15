@@ -1,21 +1,12 @@
-const {
-  SlashCommandBuilder,
-  EmbedBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  ActionRowBuilder,
-} = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
 const fetchItemData = require("../../api/poeNinja/itemoverwiev");
 const oilsData = require("../../json/commands/oils.json");
 const oilsChoices = oilsData.oils;
 
-const leagueData = require("../../json/utils/utils.json");
-const league = leagueData.poeLeague;
-
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("priceoil")
+    .setName("pricefragment")
     .setDescription("poeNinja Oils Price")
     .addStringOption((option) =>
       option
@@ -37,9 +28,7 @@ module.exports = {
     const oilName = interaction.options.getString("oils");
     try {
       const data = await fetchItemData("Oil");
-      const desiredOil = data.find(
-        (item) => item.name.toLowerCase() === oilName.toLowerCase()
-      );
+      const desiredOil = data.find((item) => item.name === oilName);
 
       if (desiredOil) {
         const chaosValue = desiredOil.chaosValue.toString();
@@ -47,7 +36,6 @@ module.exports = {
         const divineValue = desiredOil.divineValue.toString();
         const exaltedValue = desiredOil.exaltedValue.toString();
         const oilIcon = desiredOil.icon;
-        const urlName = desiredOil.name;
         const embed = new EmbedBuilder()
           .setTitle(oilName)
           .setThumbnail(oilIcon)
@@ -56,19 +44,8 @@ module.exports = {
             { name: "Divine Price", value: divineValue, inline: true },
             { name: "Exalted Price", value: exaltedValue, inline: true }
           );
-        const trade = new ButtonBuilder()
-          .setLabel("Trade")
-          .setURL(
-            `https://www.pathofexile.com/trade/search/${encodeURIComponent(
-              league
-            )}?q={"query":{"filters":{},"type":"${encodeURIComponent(
-              urlName
-            )}"}}`
-          )
-          .setStyle(ButtonStyle.Link);
-        const action = new ActionRowBuilder().addComponents(trade);
 
-        interaction.reply({ embeds: [embed], components: [action] });
+        interaction.reply({ embeds: [embed] });
       } else {
         interaction.reply("Nothing Found Oil");
       }
