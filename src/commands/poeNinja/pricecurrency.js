@@ -53,15 +53,29 @@ module.exports = {
       const desiredDetails = detailsData.find(
         (item) => item.name.toLowerCase() === currencyName.toLowerCase()
       );
+      const divineData = data.find(
+        (item) => item.currencyTypeName.toLowerCase() === "divine orb"
+      );
 
-      if (desiredData || desiredDetails) {
-        const chaosValue = desiredData.chaosEquivalent.toString();
+      if (desiredData || desiredDetails || divineData) {
+        const chaosValue = desiredData.chaosEquivalent;
         const name = desiredData.currencyTypeName;
         const currencyIcon = desiredDetails.icon;
+        const divine = divineData.chaosEquivalent;
+        const divineValue = chaosValue / divine;
         const embed = new EmbedBuilder()
           .setTitle(name)
           .setThumbnail(currencyIcon)
-          .addFields({ name: "Chaos Price", value: chaosValue, inline: true });
+          .addFields({
+            name: "Chaos Price",
+            value: chaosValue.toString(),
+            inline: true,
+          })
+          .addFields({
+            name: "Divine Price",
+            value: divineValue.toFixed(2).toString(),
+            inline: true,
+          });
 
         const sell = new ButtonBuilder()
           .setLabel("Sell")
