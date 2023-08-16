@@ -1,53 +1,90 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ActionRowBuilder,
+} = require("discord.js");
 
-const fetchItemData = require("../../api/poeNinja/itemoverwiev");
-const oilsData = require("../../json/commands/oils.json");
-const oilsChoices = oilsData.oils;
+const fetchCurrencyDetails = require("../../api/poeNinja/currencydetails");
+const fetchItemData = require("../../api/poeNinja/currencyoverwiev");
+const fragmentData = require("../../json/commands/fragment.json");
+const fragmentChoices = fragmentData.fragment;
+
+const leagueData = require("../../json/utils/utils.json");
+const league = leagueData.poeLeague;
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("pricefragment")
-    .setDescription("poeNinja Oils Price")
+    .setDescription("poeNinja Fragment Price")
     .addStringOption((option) =>
       option
-        .setName("oils")
-        .setDescription("Oils Name")
+        .setName("fragment")
+        .setDescription("Fragment Name")
         .setAutocomplete(true)
         .setRequired(true)
     ),
   async autocomplate(interaction, client) {
     const focusedValue = interaction.options.getFocused();
-    const filtered = oilsChoices.filter((choice) =>
-      choice.startsWith(focusedValue)
+    const filtered = fragmentChoices.filter((choice) =>
+      choice.startsWith(focusedValue.toLowerCase())
     );
+
+    let options;
+    if (filtered.length > 25) {
+      options = filtered.slice(0, 25);
+    } else {
+      options = filtered;
+    }
     await interaction.respond(
-      filtered.map((choice) => ({ name: choice, value: choice }))
+      options.map((choice) => ({ name: choice, value: choice }))
     );
   },
   async execute(interaction, client) {
-    const oilName = interaction.options.getString("oils");
+    const currencyName = interaction.options.getString("fragment");
     try {
-      const data = await fetchItemData("Oil");
-      const desiredOil = data.find((item) => item.name === oilName);
+      const data = await fetchItemData("Fragment");
+      const desiredData = data.find(
+        (item) =>
+          item.currencyTypeName.toLowerCase() === currencyName.toLowerCase()
+      );
+      const detailsData = await fetchCurrencyDetails("Fragment");
+      const desiredDetails = detailsData.find(
+        (item) => item.name.toLowerCase() === currencyName.toLowerCase()
+      );
 
-      if (desiredOil) {
-        const chaosValue = desiredOil.chaosValue.toString();
-        const oilName = desiredOil.name;
-        const divineValue = desiredOil.divineValue.toString();
-        const exaltedValue = desiredOil.exaltedValue.toString();
-        const oilIcon = desiredOil.icon;
+      if (desiredData || desiredDetails) {
+        const chaosValue = desiredData.chaosEquivalent.toString();
+        const name = desiredData.currencyTypeName;
+        const currencyIcon = desiredDetails.icon;
         const embed = new EmbedBuilder()
-          .setTitle(oilName)
-          .setThumbnail(oilIcon)
-          .addFields(
-            { name: "Chaos Price", value: chaosValue, inline: true },
-            { name: "Divine Price", value: divineValue, inline: true },
-            { name: "Exalted Price", value: exaltedValue, inline: true }
-          );
+          .setTitle(name)
+          .setThumbnail(currencyIcon)
+          .addFields({ name: "Chaos Price", value: chaosValue, inline: true });
 
-        interaction.reply({ embeds: [embed] });
+        const sell = new ButtonBuilder()
+          .setLabel("Sell")
+          .setURL(
+            `https://www.pathofexile.com/trade/search/${encodeURIComponent(
+              league
+            )}?q={"query":{"filters":{},"type":"${encodeURIComponent(name)}"}}`
+          )
+          .setStyle(ButtonStyle.Link);
+        const buy = new ButtonBuilder()
+          .setLabel("Buy")
+          .setURL(
+            `https://www.pathofexile.com/trade/search/${encodeURIComponent(
+              league
+            )}?q={"query":{"filters":{},"type":"${encodeURIComponent(name)}"}}`
+          )
+          .setStyle(ButtonStyle.Link);
+
+        const action = new ActionRowBuilder().addComponents(sell, buy);
+
+        interaction.reply({ embeds: [embed], components: [action] });
       } else {
-        interaction.reply("Nothing Found Oil");
+        interaction.reply("Nothing Found Fragment");
       }
     } catch (error) {
       console.log(error);
