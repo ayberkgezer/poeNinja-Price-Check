@@ -8,6 +8,7 @@ const {
 
 const fetchCurrencyDetails = require("../../api/poeNinja/currencydetails");
 const fetchItemData = require("../../api/poeNinja/currencyoverwiev");
+const fetchCurrencyData = require("../../api/poeNinja/currencyoverwiev");
 const fragmentData = require("../../json/commands/fragment.json");
 const fragmentChoices = fragmentData.fragment;
 
@@ -53,15 +54,30 @@ module.exports = {
       const desiredDetails = detailsData.find(
         (item) => item.name.toLowerCase() === currencyName.toLowerCase()
       );
+      const divine = await fetchCurrencyData("Currency");
+      const divineData = divine.find(
+        (item) => item.currencyTypeName === "Divine Orb"
+      );
 
-      if (desiredData || desiredDetails) {
+      if (desiredData || desiredDetails || divineData) {
         const chaosValue = desiredData.chaosEquivalent.toString();
         const name = desiredData.currencyTypeName;
         const currencyIcon = desiredDetails.icon;
+        const divine = divineData.chaosEquivalent;
+        const divineValue = chaosValue / divine;
         const embed = new EmbedBuilder()
           .setTitle(name)
           .setThumbnail(currencyIcon)
-          .addFields({ name: "Chaos Price", value: chaosValue, inline: true });
+          .addFields({
+            name: "Chaos Price",
+            value: chaosValue.toString(),
+            inline: true,
+          })
+          .addFields({
+            name: "Divine Price",
+            value: divineValue.toFixed(2).toString(),
+            inline: true,
+          });
 
         const sell = new ButtonBuilder()
           .setLabel("Sell")
